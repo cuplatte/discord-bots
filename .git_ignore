@@ -4,6 +4,9 @@ __pycache__/
 venv/
 .venv/
 
+# Claude
+.claude
+
 # 秘密情報
 bot.env
 *.env
