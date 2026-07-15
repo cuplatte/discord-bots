@@ -360,10 +360,13 @@ async def on_ready():
         guild_id = os.environ.get("GUILD_ID")
         if guild_id:
             # ギルド（サーバー）限定同期。反映が即時なのでテスト時に便利。
-            # 注意: copy_global_to は使わない。使うと過去にグローバル登録された
-            # 他Botのコマンドまで取り込んでしまい、コマンドが混線する。
-            # このBot自身が定義したコマンドだけをギルドへ同期する。
+            # commandはグローバル登録（@bot.tree.command、guild指定なし）なので、
+            # copy_global_to でこのBot自身のコマンドをギルド用バケットへコピーしてから
+            # sync する。copy_global_to はこのBotの tree のみに作用し、他Botの
+            # コマンドには影響しない。これをせずに sync(guild=...) だけ呼ぶと、
+            # ギルド用バケットが空のままなので 0件同期（＝登録済みコマンドが消える）になる。
             guild = discord.Object(id=int(guild_id))
+            bot.tree.copy_global_to(guild=guild)
             synced = await bot.tree.sync(guild=guild)
             print(f"Slash commands synced to guild {guild_id}: {len(synced)}")
         else:
