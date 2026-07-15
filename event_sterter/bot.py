@@ -141,7 +141,8 @@ async def project_start(interaction: discord.Interaction, 企画名: str):
             f"このチャンネルでは `@everyone` / `@here` は使えません。\n\n"
             f"**参加者全員に通知したいとき**は、下記の参加者ロールをメンションしてください。\n"
             f"閲覧者には通知が飛びません。\n\n"
-            f"🔔 参加者へ通知: {participant_role.mention}"
+            f"🔔 参加者へ通知: {participant_role.mention}\n\n"
+            f"walicaを作成したい場合は /walica を実行してください。（参加者ロールの人をメンバーとしてwalica作成します）"
         ),
         color=0x57F287,
     )
