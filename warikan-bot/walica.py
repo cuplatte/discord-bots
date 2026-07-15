@@ -87,9 +87,12 @@ async def create_walica_project(title: str, member_names: list) -> str:
                 timeout=WAIT_TIMEOUT,
             )
 
-            # 押下でページ遷移が起きるので、遷移完了を待つ
-            async with page.expect_navigation(wait_until="networkidle", timeout=WAIT_TIMEOUT):
+            # 押下でページ遷移が起きるので、遷移完了を待つ。
+            # networkidle は SPA だと通信が止まらず永遠に満たされないことがあるため使わない。
+            # domcontentloaded で遷移自体を検知したうえで、遷移先が /share であることも確認する。
+            async with page.expect_navigation(wait_until="domcontentloaded", timeout=WAIT_TIMEOUT):
                 await page.locator(SEL_CREATE_BUTTON).click()
+            await page.wait_for_url("**/share*", timeout=WAIT_TIMEOUT)
 
             # --- (4) 遷移後URLから末尾の /share を除去 ---
             final_url = page.url
