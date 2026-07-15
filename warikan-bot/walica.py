@@ -88,11 +88,14 @@ async def create_walica_project(title: str, member_names: list) -> str:
             )
 
             # 押下後、/share へのURL遷移を待つ。
-            # walicaはクライアントサイドルーティングでURLを変えているらしく、
-            # expect_navigation（フレームナビゲーションイベント依存）では遷移を検知できない。
-            # そのためURLそのものをポーリングする wait_for_url を使う。
+            # walicaのページには広告等が載っており読み込みが完了しないことがあるため、
+            # load/networkidle等の読み込み状態を待つ方式（expect_navigation, wait_for_url）は
+            # 使わない。JS上のURL文字列だけを見る wait_for_function で判定する。
             await page.locator(SEL_CREATE_BUTTON).click()
-            await page.wait_for_url("**/share*", timeout=WAIT_TIMEOUT)
+            await page.wait_for_function(
+                "() => location.href.includes('/share')",
+                timeout=WAIT_TIMEOUT,
+            )
 
             # --- (4) 遷移後URLから末尾の /share を除去 ---
             final_url = page.url
