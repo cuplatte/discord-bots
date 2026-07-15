@@ -229,6 +229,32 @@ async def on_raw_reaction_remove(payload: discord.RawReactionActionEvent):
     await _handle_reaction(payload, add=False)
 
 
+# ---- チャンネル名変更にロール名を追従させる ---------------------------------
+@bot.event
+async def on_guild_channel_update(before: discord.abc.GuildChannel,
+                                   after: discord.abc.GuildChannel):
+    if not isinstance(before, discord.TextChannel) or before.name == after.name:
+        return
+
+    # 企画用カテゴリ配下のチャンネルのみ対象（管理外チャンネルへの誤爆防止）
+    category_name = after.category.name if after.category else None
+    if category_name not in (ACTIVE_CATEGORY, ARCHIVE_CATEGORY):
+        return
+
+    guild = after.guild
+    for suffix in ("_参加者", "_閲覧者"):
+        role = discord.utils.get(guild.roles, name=before.name + suffix)
+        if role is None:
+            continue
+        try:
+            await role.edit(
+                name=after.name + suffix,
+                reason=f"チャンネル名変更に追従: {before.name} -> {after.name}",
+            )
+        except discord.Forbidden:
+            pass  # Botのロール順位が対象ロールより下だと失敗する
+
+
 # ---- /企画終了 -----------------------------------------------------------
 class ConfirmEndView(discord.ui.View):
     def __init__(self, channel: discord.TextChannel, invoker_id: int):
