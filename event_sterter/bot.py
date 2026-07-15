@@ -79,8 +79,14 @@ async def project_start(interaction: discord.Interaction, 企画名: str):
 
     # --- チャンネル権限（進行中）---
     # @everyone は見えない。2ロールは閲覧・送信とも可。
+    # Bot自身も閲覧・送信・リアクション可にしておかないと、
+    # 作成直後のメッセージ投稿が 403 Missing Access で失敗する。
     overwrites = {
         guild.default_role: discord.PermissionOverwrite(view_channel=False),
+        guild.me: discord.PermissionOverwrite(
+            view_channel=True, send_messages=True, add_reactions=True,
+            manage_messages=True, read_message_history=True,
+        ),
         participant_role: discord.PermissionOverwrite(view_channel=True, send_messages=True),
         viewer_role: discord.PermissionOverwrite(view_channel=True, send_messages=True),
     }
@@ -94,12 +100,16 @@ async def project_start(interaction: discord.Interaction, 企画名: str):
     )
 
     # --- リアクション参加メッセージ ---
+    # 参加案内は「コマンドを実行したチャンネル」に投稿する。
+    # 企画チャンネルは初期状態で @everyone 非表示のため、そこに案内を出すと
+    # まだ参加していない人が案内を見られない。全員が見える実行チャンネルに出す。
     embed = discord.Embed(
         title=f"📢 {企画名}",
         description=(
-            f"この企画に参加する人はリアクションを押してください。\n\n"
+            f"新しい企画が始まりました！参加する人はリアクションを押してください。\n\n"
             f"{EMOJI_PARTICIPANT} 参加者として参加\n"
             f"{EMOJI_VIEWER} 閲覧者として参加\n\n"
+            f"リアクションを押すと企画チャンネルが見えるようになります。\n"
             f"リアクションを外すとロールも外れます。"
         ),
         color=0x5865F2,
@@ -107,12 +117,14 @@ async def project_start(interaction: discord.Interaction, 企画名: str):
     # ロールIDをフッターに埋め込み、リアクション処理時に参照する
     embed.set_footer(text=f"pids:{participant_role.id}:{viewer_role.id}")
 
-    msg = await channel.send(embed=embed)
+    # コマンドを実行したチャンネルに投稿（Bot・全員が見えるので権限エラーにならない）
+    msg = await interaction.channel.send(embed=embed)
     await msg.add_reaction(EMOJI_PARTICIPANT)
     await msg.add_reaction(EMOJI_VIEWER)
 
     await interaction.followup.send(
-        f"企画「{base_name}」を作成しました → {channel.mention}", ephemeral=True
+        f"企画「{base_name}」を作成しました → {channel.mention}\n"
+        f"参加募集メッセージをこのチャンネルに投稿しました。", ephemeral=True
     )
 
 
